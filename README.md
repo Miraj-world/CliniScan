@@ -42,20 +42,47 @@ Returns:
 - `pipeline_stages`, `diagnosis`, `urgency`, `conflict`, `risk_signals`, `quality`, `no_image_mode`, `demo_mode`
 
 ## Local Setup
+
+### Prerequisites
+- Python 3.10+
+- Node.js 18+
+- API keys: Create a `.env` file in `backend/` with:
+  ```
+  ANTHROPIC_API_KEY=your_anthropic_key
+  OPENAI_API_KEY=your_openai_key
+  ```
+
 ### Backend
 ```bash
+# From the CliniScan root directory
 cd backend
 pip install -r requirements.txt
-copy .env.example .env
-uvicorn main:app --reload --port 8000
+copy .env.example .env    # Then edit .env with your API keys
+python -m uvicorn main:app --reload --port 8000
 ```
 
 ### Frontend
 ```bash
+# From the CliniScan root directory (separate terminal)
 cd frontend
 npm install
 npm run dev
 ```
 
-Frontend default URL: `http://localhost:3000`
-Backend default URL: `http://localhost:8000`
+### Running the Application
+
+1. **Start Backend** (Terminal 1):
+   ```bash
+   cd backend
+   python -m uvicorn main:app --reload --port 8000
+   ```
+   Backend runs at: `http://localhost:8000`
+
+2. **Start Frontend** (Terminal 2):
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+   Frontend typically runs at: `http://localhost:3000` (or next available port)
+
+3. Open the frontend URL in your browser
