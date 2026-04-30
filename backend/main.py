@@ -10,6 +10,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from layers.clinical_reasoning import generate_clinical_reasoning
+from layers.ai_gateway import ANTHROPIC_MODEL, OPENAI_MODEL
 from layers.evidence_fusion import fuse_evidence
 from layers.json_parser import fallback_diagnosis
 from layers.quality_gate import assess_data_quality
@@ -234,7 +235,7 @@ async def health():
     return {
         "status": "ok",
         "providers": {
-            "anthropic": {"configured": anthropic_ready, "model": "claude-sonnet-4-20250514"},
-            "openai": {"configured": openai_ready, "model": "gpt-4o"},
+            "anthropic": {"configured": anthropic_ready, "model": ANTHROPIC_MODEL},
+            "openai": {"configured": openai_ready, "model": OPENAI_MODEL},
         },
     }
