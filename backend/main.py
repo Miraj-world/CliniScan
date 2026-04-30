@@ -24,7 +24,7 @@ app = FastAPI(title="CliniScan", version="2.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -116,6 +116,7 @@ async def analyze(req: AnalyzeRequest):
 
     vision_output: dict = {}
     no_image_mode = not bool(req.image_base64)
+    no_image_reason = "no_image_provided" if no_image_mode else None
 
     if not no_image_mode:
         vision_task = asyncio.create_task(
@@ -137,12 +138,15 @@ async def analyze(req: AnalyzeRequest):
         if isinstance(vision_result, Exception):
             no_image_mode = True
             vision_output = {}
+            no_image_reason = "vision_processing_error"
         else:
             if not vision_result.get("medical_relevance", True):
                 no_image_mode = True
                 vision_output = {}
+                no_image_reason = "image_not_medically_relevant"
             else:
                 vision_output = vision_result
+                no_image_reason = None
     else:
         try:
             symptom_output = await structure_symptoms(form_data, provider, api_key)
@@ -164,6 +168,7 @@ async def analyze(req: AnalyzeRequest):
         except Exception:
             no_image_mode = True
             vision_output = {}
+            no_image_reason = "vision_schema_validation_error"
 
     try:
         fusion_output = fuse_evidence(symptom_output, vision_output, override, no_image=no_image_mode)
@@ -183,6 +188,10 @@ async def analyze(req: AnalyzeRequest):
         diagnosis = await generate_clinical_reasoning(fusion_output, quality_output, provider, api_key)
     except Exception:
         diagnosis = fallback_diagnosis()
+        fusion_output["risk_signals"] = list(dict.fromkeys([
+            *fusion_output.get("risk_signals", []),
+            "Clinical reasoning model response was unavailable or invalid",
+        ]))
 
     payload = {
         "pipeline_stages": {
@@ -198,6 +207,7 @@ async def analyze(req: AnalyzeRequest):
         "risk_signals": fusion_output.get("risk_signals", []),
         "quality": quality_output,
         "no_image_mode": no_image_mode,
+        "no_image_reason": no_image_reason,
         "demo_mode": False,
     }
 

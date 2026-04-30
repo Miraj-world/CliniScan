@@ -114,6 +114,7 @@ export default function InputForm({ onSubmit, onDemo, error }) {
             value={formData.severity_score}
             onChange={(e) => setField("severity_score", e.target.value)}
           />
+          <small>This scale is for the severity of your pain (1 = mild, 10 = severe).</small>
         </label>
 
         <label className="field">

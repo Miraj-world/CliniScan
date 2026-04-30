@@ -44,12 +44,17 @@ export default function App() {
 
   const status = useMemo(() => ({ apiUrl: API_URL }), []);
 
-  async function callAnalyze(payload) {
-    const res = await fetch(`${API_URL}/analyze`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+async function callAnalyze(payload) {
+    let res;
+    try {
+      res = await fetch(`${API_URL}/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    } catch (_error) {
+      throw new Error(`Unable to reach backend at ${API_URL}. Make sure the API server is running.`);
+    }
 
     const body = await res.json().catch(() => ({}));
     if (!res.ok) {

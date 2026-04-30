@@ -85,7 +85,7 @@ def fallback_diagnosis() -> dict[str, Any]:
             "The current result is conservative and should not be used as a diagnosis.",
             "A licensed clinician should review symptoms directly.",
         ],
-        "red_flags": ["Unable to fully parse AI output"],
+        "red_flags": ["Clinical reasoning output could not be parsed reliably"],
         "recommendation": "Seek medical evaluation if symptoms persist or worsen.",
         "disclaimer": STANDARD_DISCLAIMER,
     }

@@ -122,4 +122,5 @@ class FullResponse(BaseModel):
     risk_signals: list[str]
     quality: QualityOutput
     no_image_mode: bool
+    no_image_reason: Optional[str] = None
     demo_mode: bool

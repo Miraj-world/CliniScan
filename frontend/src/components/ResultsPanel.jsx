@@ -14,6 +14,7 @@ function ConditionCard({ name, confidence }) {
 export default function ResultsPanel({ data, onReset }) {
   const diagnosis = data.diagnosis || {};
   const quality = data.quality || {};
+  const imageFallbackReason = data.no_image_reason;
 
   return (
     <section className="stack gap-md">
@@ -76,7 +77,17 @@ export default function ResultsPanel({ data, onReset }) {
         </div>
       ) : null}
 
-      {data.no_image_mode ? <div className="banner">Text-only mode - No image was used.</div> : null}
+      {data.no_image_mode ? (
+        <div className="banner">
+          {imageFallbackReason === "no_image_provided"
+            ? "Text-only mode - No image was provided."
+            : imageFallbackReason === "image_not_medically_relevant"
+              ? "Text-only mode - The uploaded image was not medically relevant."
+              : imageFallbackReason === "vision_processing_error" || imageFallbackReason === "vision_schema_validation_error"
+                ? "Text-only mode - Image upload was received, but vision analysis failed. The result used symptom text only."
+                : "Text-only mode - No image was used."}
+        </div>
+      ) : null}
 
       <button className="primary" onClick={onReset}>
         Start over
