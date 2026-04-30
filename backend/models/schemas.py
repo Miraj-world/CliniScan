@@ -2,7 +2,20 @@ from __future__ import annotations
 
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+class VisionOutput(BaseModel):
+    medical_relevance: bool = True
+    visual_features: dict[str, str] = Field(default_factory=dict)
+    severity_indicators: SeverityIndicators = Field(default_factory=SeverityIndicators)
+    visual_severity: UrgencyLevel = "low"
+    confidence: ConfidenceLevel = "low"
+    detected_signs: list[str] = Field(default_factory=list)
+
+    @field_validator("visual_severity", "confidence", mode="before")
+    @classmethod
+    def lowercase_levels(cls, v):
+        return str(v).lower() if v else "low"
 
 
 UrgencyLevel = Literal["low", "medium", "high"]
@@ -48,15 +61,6 @@ class SeverityIndicators(BaseModel):
     spreading: bool = False
     discoloration: bool = False
     discharge: bool = False
-
-
-class VisionOutput(BaseModel):
-    medical_relevance: bool = True
-    visual_features: dict[str, str] = Field(default_factory=dict)
-    severity_indicators: SeverityIndicators = Field(default_factory=SeverityIndicators)
-    visual_severity: UrgencyLevel = "low"
-    confidence: ConfidenceLevel = "low"
-    detected_signs: list[str] = Field(default_factory=list)
 
 
 class SymptomOutput(BaseModel):

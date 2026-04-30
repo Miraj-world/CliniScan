@@ -114,13 +114,23 @@ async def analyze(req: AnalyzeRequest):
         "low" if req.severity_score <= 3 else "medium" if req.severity_score <= 6 else "high"
     )
 
+    # Strip data URI prefix if present (e.g., "data:image/jpeg;base64,")
+    image_data = req.image_base64 or ""
+    if ";base64," in image_data:
+        image_data = image_data.split(";base64,")[1]
+
+    # Strip data URI prefix if present (e.g., "data:image/jpeg;base64,")
+    image_data = req.image_base64 or ""
+    if ";base64," in image_data:
+        image_data = image_data.split(";base64,")[1]
+
     vision_output: dict = {}
-    no_image_mode = not bool(req.image_base64)
+    no_image_mode = not bool(image_data)
     no_image_reason = "no_image_provided" if no_image_mode else None
 
     if not no_image_mode:
         vision_task = asyncio.create_task(
-            extract_vision_features(req.image_base64 or "", req.image_mime, provider, api_key)
+            extract_vision_features(image_data, req.image_mime, provider, api_key)
         )
         symptom_task = asyncio.create_task(structure_symptoms(form_data, provider, api_key))
 
