@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SymptomScan AI</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,300&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet" />
+    <style>
+        /* ── Design tokens ─────────────────────────────────────────── */
+        :root {
+            --ink: #1c1917;
+            --ink-2: #44403c;
+            --ink-3: #78716c;
+            --paper: #fafaf9;
+            --paper-2: #f5f5f4;
+            --paper-3: #e7e5e4;
+            --line: #d6d3d1;
+            --line-2: #e7e5e4;
+
+            --emerald: #059669;
+            --emerald-bg: #ecfdf5;
+            --emerald-bd: #a7f3d0;
+
+            --amber: #b45309;
+            --amber-bg: #fffbeb;
+            --amber-bd: #fcd34d;
+
+            --rose: #be123c;
+            --rose-bg: #fff1f2;
+            --rose-bd: #fda4af;
+
+            --sky: #0369a1;
+            --sky-bg: #f0f9ff;
+            --sky-bd: #bae6fd;
+
+            --r: 12px;
+            --shadow: 0 1px 2px rgba(28, 25, 23, .06), 0 3px 8px rgba(28, 25, 23, .04);
+            --shadow-md: 0 2px 6px rgba(28, 25, 23, .08), 0 8px 24px rgba(28, 25, 23, .06);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--paper-2);
+            color: var(--ink);
+            min-height: 100vh;
+            font-size: 15px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── App shell ────────────────────────────────────────────── */
+        .app {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        /* ── Sidebar ──────────────────────────────────────────────── */
+        .sidebar {
+            background: var(--paper);
+            border-right: 1px solid var(--line);
+            padding: 24px 18px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        .wordmark {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 4px 0;
+        }
+
+        .wordmark-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--ink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .wordmark-icon svg {
+            display: block;
+        }
+
+        .wordmark-text {
+            font-family: 'Fraunces', serif;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            line-height: 1;
+        }
+
+        .wordmark-text small {
+            display: block;
+            font-family: 'Outfit', sans-serif;
+            font-size: 10px;
+            font-weight: 400;
+            color: var(--ink-3);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        .sidebar-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+            margin-bottom: 6px;
+        }
+
+        /* Demo scenarios */
+        .scenario-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .scenario-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid var(--line-2);
+            border-radius: 9px;
+            background: var(--paper-2);
+            cursor: pointer;
+            text-align: left;
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--ink-2);
+            transition: all .15s;
+        }
+
+        .scenario-btn:hover {
+            background: var(--paper);
+            border-color: var(--line);
+            color: var(--ink);
+            transform: translateX(2px);
+        }
+
+        .scenario-icon {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .scenario-name {
+            flex: 1;
+        }
+
+        .urgency-chip {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 2px 7px;
+            border-radius: 5px;
+        }
+
+        .chip-high {
+            background: var(--rose-bg);
+            color: var(--rose);
+            border: 1px solid var(--rose-bd);
+        }
+
+        .chip-medium {
+            background: var(--amber-bg);
+            color: var(--amber);
+            border: 1px solid var(--amber-bd);
+        }
+
+        .chip-low {
+            background: var(--emerald-bg);
+            color: var(--emerald);
+            border: 1px solid var(--emerald-bd);
+        }
+
+        /* Config */
+        .config-section {
+            margin-top: auto;
+            border-top: 1px solid var(--line-2);
+            padding-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .config-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .config-field label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+        }
+
+        .config-field input {
+            background: var(--paper-2);
+            border: 1px solid var(--line);
+            border-radius: 7px;
+            padding: 7px 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--ink);
+            outline: none;
+            transition: border-color .15s;
+        }
+
+        .config-field input:focus {
+            border-color: var(--ink);
+        }
+
+        .config-field input::placeholder {
+            color: var(--ink-3);
+        }
+
+        .mock-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            background: var(--paper-2);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--ink-2);
+            transition: all .15s;
+            user-select: none;
+        }
+
+        .mock-row.live {
+            border-color: var(--emerald-bd);
+            background: var(--emerald-bg);
+            color: var(--emerald);
+        }
+
+        .pill-switch {
+            width: 32px;
+            height: 18px;
+            background: var(--line);
+            border-radius: 9px;
+            position: relative;
+            transition: background .2s;
+            flex-shrink: 0;
+        }
+
+        .mock-row.live .pill-switch {
+            background: var(--emerald);
+        }
+
+        .pill-switch::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: white;
+            top: 3px;
+            left: 3px;
+            transition: transform .2s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .2);
+        }
+
+        .mock-row.live .pill-switch::after {
+            transform: translateX(14px);
+        }
+
+        /* ── Main content ─────────────────────────────────────────── */
+        .main {
+            padding: 44px 52px;
+            max-width: 900px;
+        }
+
+        .page-heading {
+            font-family: 'Fraunces', serif;
+            font-size: 34px;
+            font-weight: 500;
+            letter-spacing: -0.8px;
+            line-height: 1.15;
+            margin-bottom: 6px;
+        }
+
+        .page-heading em {
+            font-style: italic;
+            color: var(--ink-3);
+        }
+
+        .page-sub {
+            font-size: 14px;
+            color: var(--ink-3);
+            margin-bottom: 40px;
+            font-weight: 300;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: var(--r);
+            padding: 26px 28px;
+            margin-bottom: 14px;
+            box-shadow: var(--shadow);
+        }
+
+        .card-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--line-2);
+        }
+
+        .card-icon-wrap {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--paper-2);
+            border: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .card-title {
+            font-family: 'Fraunces', serif;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .card-desc {
+            font-size: 12px;
+            color: var(--ink-3);
+            margin-top: 1px;
+        }
+
+        /* Form */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .span-2 {
+            grid-column: 1 / -1;
+        }
+
+        .fld {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .fld label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+        }
+
+        .fld input,
+        .fld textarea {
+            background: var(--paper-2);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 10px 13px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            color: var(--ink);
+            outline: none;
+            transition: border-color .15s, box-shadow .15s;
+            width: 100%;
+        }
+
+        .fld input:focus,
+        .fld textarea:focus {
+            border-color: var(--ink);
+            box-shadow: 0 0 0 3px rgba(28, 25, 23, .06);
+        }
+
+        .fld input::placeholder,
+        .fld textarea::placeholder {
+            color: var(--ink-3);
+        }
+
+        .fld textarea {
+            resize: vertical;
+            min-height: 96px;
+            line-height: 1.55;
+        }
+
+        .fld-hint {
+            font-size: 11px;
+            color: var(--ink-3);
+            margin-top: 3px;
+        }
+
+        .fld-hint.warn {
+            color: var(--amber);
+        }
+
+        /* Slider */
+        .slider-track {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--line);
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--ink);
+            cursor: pointer;
+            border: 2px solid var(--paper);
+            box-shadow: 0 0 0 1px var(--line);
+        }
+
+        .slider-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            font-weight: 500;
+            width: 22px;
+            text-align: center;
+            color: var(--ink);
+        }
+
+        .slider-ends {
+            font-size: 11px;
+            color: var(--ink-3);
+            width: 48px;
+        }
+
+        /* Image upload */
+        .dropzone {
+            border: 1.5px dashed var(--line);
+            border-radius: 10px;
+            padding: 36px 24px;
+            text-align: center;
+            cursor: pointer;
+            background: var(--paper-2);
+            transition: all .2s;
+            position: relative;
+        }
+
+        .dropzone:hover,
+        .dropzone.over {
+            border-color: var(--ink);
+            background: var(--paper);
+        }
+
+        .dz-icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .dz-main {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 3px;
+        }
+
+        .dz-sub {
+            font-size: 12px;
+            color: var(--ink-3);
+        }
+
+        .preview-wrap {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .preview-wrap img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .preview-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(28, 25, 23, .5) 0%, transparent 50%);
+            display: flex;
+            align-items: flex-end;
+            padding: 12px;
+        }
+
+        .remove-btn {
+            padding: 5px 14px;
+            background: rgba(28, 25, 23, .8);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background .15s;
+        }
+
+        .remove-btn:hover {
+            background: var(--rose);
+        }
+
+        .text-only-note {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 10px;
+            padding: 5px 12px;
+            background: var(--sky-bg);
+            color: var(--sky);
+            border: 1px solid var(--sky-bd);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Actions */
+        .action-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .btn-primary {
+            flex: 1;
+            padding: 14px 20px;
+            background: var(--ink);
+            color: var(--paper);
+            border: none;
+            border-radius: 10px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #292524;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(28, 25, 23, .2);
+        }
+
+        .btn-primary:disabled {
+            opacity: .35;
+            cursor: not-allowed;
+        }
+
+        .btn-ghost {
+            padding: 14px 18px;
+            background: transparent;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            color: var(--ink-3);
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--rose);
+            color: var(--rose);
+            background: var(--rose-bg);
+        }
+
+        /* ── Pipeline ─────────────────────────────────────────────── */
+        .pipeline {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pipe-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 12px 0;
+            position: relative;
+        }
+
+        .pipe-item:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 13px;
+            top: 42px;
+            width: 1px;
+            height: calc(100% - 10px);
+            background: var(--line-2);
+            transition: background .4s;
+        }
+
+        .pipe-item.done::after {
+            background: var(--emerald-bd);
+        }
+
+        .pipe-node {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 1.5px solid var(--line);
+            background: var(--paper);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+            transition: all .3s;
+            color: var(--ink-3);
+        }
+
+        .pipe-item.active .pipe-node {
+            border-color: var(--ink);
+            background: var(--ink);
+            color: white;
+            animation: breathe 1.6s ease-in-out infinite;
+        }
+
+        .pipe-item.done .pipe-node {
+            border-color: var(--emerald);
+            background: var(--emerald);
+            color: white;
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(28, 25, 23, .2);
+            }
+
+            50% {
+                box-shadow: 0 0 0 7px rgba(28, 25, 23, 0);
+            }
+        }
+
+        .pipe-text {
+            padding-top: 3px;
+        }
+
+        .pipe-label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .pipe-sub {
+            font-size: 12px;
+            color: var(--ink-3);
+            margin-top: 1px;
+        }
+
+        .pipe-item.active .pipe-label {
+            color: var(--ink);
+        }
+
+        .pipe-item.done .pipe-label {
+            color: var(--ink-3);
+        }
+
+        .pipe-item.done .pipe-sub {
+            color: var(--emerald);
+        }
+
+        /* ── Results ──────────────────────────────────────────────── */
+        .results-banner {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+        }
+
+        .results-title {
+            font-family: 'Fraunces', serif;
+            font-size: 26px;
+            font-weight: 500;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+
+        .results-meta {
+            font-size: 12px;
+            color: var(--ink-3);
+        }
+
+        .urgency-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 18px;
+            border-radius: 24px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+
+        .badge-high {
+            background: var(--rose-bg);
+            color: var(--rose);
+            border: 1px solid var(--rose-bd);
+        }
+
+        .badge-medium {
+            background: var(--amber-bg);
+            color: var(--amber);
+            border: 1px solid var(--amber-bd);
+        }
+
+        .badge-low {
+            background: var(--emerald-bg);
+            color: var(--emerald);
+            border: 1px solid var(--emerald-bd);
+        }
+
+        .badge-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* Conflict callout */
+        .conflict-callout {
+            border: 1px solid var(--amber-bd);
+            background: var(--amber-bg);
+            border-radius: var(--r);
+            padding: 18px 22px;
+            margin-bottom: 20px;
+            animation: fadeUp .3s ease;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .conflict-title {
+            font-family: 'Fraunces', serif;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--amber);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .conflict-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .conflict-cell {
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, .5);
+            border-radius: 8px;
+        }
+
+        .conflict-cell-label {
+            font-size: 10px;
+            color: var(--ink-3);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 3px;
+        }
+
+        .conflict-cell-value {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--amber);
+            text-transform: capitalize;
+        }
+
+        .conflict-note {
+            font-size: 12px;
+            color: var(--amber);
+            opacity: .85;
+            font-style: italic;
+        }
+
+        /* Score row */
+        .score-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .score-cell {
+            background: var(--paper-2);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 14px 16px;
+            text-align: center;
+        }
+
+        .score-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 32px;
+            font-weight: 500;
+            color: var(--ink);
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .score-lbl {
+            font-size: 10px;
+            color: var(--ink-3);
+            text-transform: uppercase;
+            letter-spacing: .1em;
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 26px;
+        }
+
+        .section-title {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--line-2);
+        }
+
+        /* Conditions */
+        .condition-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .condition-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 16px;
+            background: var(--paper-2);
+            border: 1px solid var(--line-2);
+            border-radius: 9px;
+            transition: border-color .15s;
+        }
+
+        .condition-row:hover {
+            border-color: var(--line);
+        }
+
+        .cond-rank {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--ink-3);
+            width: 20px;
+            text-align: center;
+        }
+
+        .cond-name {
+            font-size: 14px;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .conf-pill {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            padding: 3px 9px;
+            border-radius: 5px;
+        }
+
+        /* confidence_levels come back as "high"|"medium"|"low" from Isaac's normalize_confidence */
+        .conf-high {
+            background: var(--emerald-bg);
+            color: var(--emerald);
+            border: 1px solid var(--emerald-bd);
+        }
+
+        .conf-medium {
+            background: var(--amber-bg);
+            color: var(--amber);
+            border: 1px solid var(--amber-bd);
+        }
+
+        .conf-low {
+            background: var(--rose-bg);
+            color: var(--rose);
+            border: 1px solid var(--rose-bd);
+        }
+
+        /* Reasoning */
+        .reasoning-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .reasoning-row {
+            display: flex;
+            gap: 10px;
+            font-size: 13.5px;
+            color: var(--ink-2);
+            line-height: 1.55;
+        }
+
+        .reasoning-dash {
+            color: var(--ink-3);
+            flex-shrink: 0;
+            font-weight: 600;
+        }
+
+        /* Red flags */
+        .flag-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .flag-tag {
+            background: var(--rose-bg);
+            color: var(--rose);
+            border: 1px solid var(--rose-bd);
+            border-radius: 7px;
+            padding: 4px 11px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Risk signals */
+        .signals-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .signal-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--amber);
+        }
+
+        .signal-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: currentColor;
+            flex-shrink: 0;
+            margin-top: 6px;
+        }
+
+        /* Recommendation */
+        .rec-box {
+            background: var(--emerald-bg);
+            border: 1px solid var(--emerald-bd);
+            border-radius: var(--r);
+            padding: 16px 20px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .rec-arrow {
+            font-size: 14px;
+            color: var(--emerald);
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .rec-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--emerald);
+            line-height: 1.5;
+        }
+
+        /* Disclaimer */
+        .disclaimer {
+            text-align: center;
+            font-size: 11px;
+            color: var(--ink-3);
+            margin-top: 16px;
+            font-style: italic;
+            line-height: 1.5;
+        }
+
+        /* Error */
+        .error-box {
+            background: var(--rose-bg);
+            border: 1px solid var(--rose-bd);
+            border-radius: 9px;
+            padding: 13px 16px;
+            color: var(--rose);
+            font-size: 13px;
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            line-height: 1.5;
+        }
+
+        /* Demo badge */
+        .demo-flag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 9px;
+            background: var(--sky-bg);
+            color: var(--sky);
+            border: 1px solid var(--sky-bd);
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .btn-back {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            color: var(--ink-3);
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .btn-back:hover {
+            border-color: var(--ink);
+            color: var(--ink);
+        }
+
+        /* ── Responsive ───────────────────────────────────────────── */
+        @media (max-width: 720px) {
+            .app {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+                height: auto;
+            }
+
+            .main {
+                padding: 28px 20px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .span-2 {
+                grid-column: 1;
+            }
+
+            .score-row {
+                grid-template-columns: 1fr;
+            }
+
+            .conflict-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useRef, useCallback } = React;
+
+        /* ════════════════════════════════════════════════════════════════
+           API LAYER
+           When Isaac's backend is ready, set BACKEND_URL and flip to live.
+           The response shape here EXACTLY matches Isaac's Pydantic schemas:
+             FusionResult, DiagnosisResult, ConflictResult in app/schemas.py
+           ════════════════════════════════════════════════════════════════ */
+        const API = {
+            url: "http://localhost:8000",
+
+            async analyze({ formData, imageB64, imageMime, apiKey }) {
+                const body = {
+                    symptom_text: formData.symptom_text,
+                    body_location: formData.body_location,
+                    duration_days: Number(formData.duration_days),
+                    severity: Number(formData.severity),
+                    age: formData.age ? Number(formData.age) : null,
+                    known_conditions: formData.known_conditions || null,
+                    image_base64: imageB64 || null,
+                    image_mime: imageMime || "image/jpeg",
+                    api_key: apiKey,
+                    provider: provider || "anthropic",
+                };
+
+                const res = await fetch(`${API.url}/analyze`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body),
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || err.message || `Server returned ${res.status}`);
+                }
+
+                // Isaac's response: { fusion: FusionResult, diagnosis: DiagnosisResult, has_image: bool }
+                return res.json();
+            },
+        };
+
+        /* ── Mock data (exact shapes from Isaac's schemas.py) ─────────── */
+        const MOCK = {
+            high: {
+                fusion: {
+                    vision_score: 9, text_score: 6, total_risk_score: 15,
+                    urgency: "high",
+                    conflict: { conflict_detected: true, conflict_type: "severity_mismatch", text_severity: "low", vision_severity: "high" },
+                    risk_signals: ["Spreading pattern detected visually", "Discharge detected visually", "Patient reports worsening progression", "Visual evidence suggests higher severity than patient reports"],
+                },
+                diagnosis: {
+                    possible_conditions: ["Bacterial conjunctivitis", "Viral conjunctivitis", "Uveitis", "Corneal abrasion"],
+                    confidence_levels: ["high", "high", "medium", "low"],
+                    urgency: "high",
+                    red_flags: ["Eye pain or light sensitivity reported", "Discharge reported or detected"],
+                    recommendation: "Seek medical attention within 24 hours. Light sensitivity with discharge may indicate a condition requiring prescription treatment.",
+                    clinical_reasoning: [
+                        "Visual analysis detected discharge and marked redness consistent with an acute ocular infection.",
+                        "Patient-reported photophobia alongside a 2-day worsening progression indicates possible deeper involvement beyond simple conjunctivitis.",
+                        "Severity discrepancy between self-report and visual evidence suggests underreporting; risk score weighted toward visual findings.",
+                    ],
+                    disclaimer: "Not a diagnosis. Always consult a licensed medical professional.",
+                },
+                has_image: true,
+            },
+            medium: {
+                fusion: {
+                    vision_score: 4, text_score: 4, total_risk_score: 8,
+                    urgency: "medium",
+                    conflict: { conflict_detected: false, conflict_type: null, text_severity: "medium", vision_severity: "medium" },
+                    risk_signals: ["Discoloration detected visually", "Patient reports worsening progression", "Fever with rash reported"],
+                },
+                diagnosis: {
+                    possible_conditions: ["Tinea corporis (ringworm)", "Contact dermatitis", "Nummular eczema", "Early Lyme disease"],
+                    confidence_levels: ["high", "medium", "medium", "low"],
+                    urgency: "medium",
+                    red_flags: ["Fever with rash reported", "Expanding rash border"],
+                    recommendation: "Schedule a GP visit within 48 hours. Avoid scratching and keep the area clean and dry.",
+                    clinical_reasoning: [
+                        "The circular, well-defined rash pattern with discoloration is highly characteristic of tinea corporis.",
+                        "Fever accompanying a skin presentation increases concern for a systemic component requiring clinical evaluation.",
+                        "3-day duration with patient-reported worsening warrants timely assessment to rule out Lyme disease.",
+                    ],
+                    disclaimer: "Not a diagnosis. Always consult a licensed medical professional.",
+                },
+                has_image: true,
+            },
+            low: {
+                fusion: {
+                    vision_score: 2, text_score: 2, total_risk_score: 4,
+                    urgency: "low",
+                    conflict: { conflict_detected: false, conflict_type: null, text_severity: "low", vision_severity: "low" },
+                    risk_signals: ["Swelling detected visually"],
+                },
+                diagnosis: {
+                    possible_conditions: ["Minor thermal burn (1st–2nd degree)", "Friction blister", "Contact blister"],
+                    confidence_levels: ["high", "medium", "low"],
+                    urgency: "low",
+                    red_flags: [],
+                    recommendation: "Cool the area under running water for 10–20 min. Cover with a sterile non-stick dressing. Do not pop the blister.",
+                    clinical_reasoning: [
+                        "Single-day onset following direct stove contact is consistent with a superficial thermal burn.",
+                        "Blistering indicates partial-thickness involvement, manageable with standard first-aid measures.",
+                        "Severity score and visual indicators do not suggest complications or systemic involvement at this time.",
+                    ],
+                    disclaimer: "Not a diagnosis. Always consult a licensed medical professional.",
+                },
+                has_image: false,
+            },
+        };
+
+        /* ── Demo scenarios ───────────────────────────────────────────── */
+        const DEMOS = [
+            {
+                label: "Eye Redness", icon: "👁", urgency: "high",
+                symptom_text: "My eye has been red and watery for 2 days. There's some yellow discharge in the corner and I'm getting significant light sensitivity.", body_location: "Left eye", duration_days: 2, severity: 7
+            },
+            {
+                label: "Circular Rash", icon: "🔴", urgency: "medium",
+                symptom_text: "I have a red circular rash on my forearm. It's been itchy for 3 days and I've also got a mild fever.", body_location: "Right forearm", duration_days: 3, severity: 5
+            },
+            {
+                label: "Burn Blister", icon: "🔥", urgency: "low",
+                symptom_text: "I burned my finger on the stove this morning. A small blister has formed and it's painful to touch.", body_location: "Index finger, right hand", duration_days: 1, severity: 4
+            },
+        ];
+
+        /* ── Pipeline stages ──────────────────────────────────────────── */
+        const STAGES_WITH_IMAGE = [
+            { key: "vision", label: "Analyzing image", sub: "Vision API → structured feature extraction" },
+            { key: "symptom", label: "Structuring symptoms", sub: "Medical intake parser → SymptomData schema" },
+            { key: "fusion", label: "Fusing evidence", sub: "Deterministic scoring — no AI" },
+            { key: "diagnosis", label: "Generating clinical reasoning", sub: "LLM receives structured data only" },
+            { key: "done", label: "Computing urgency", sub: "Risk classifier → FusionResult" },
+        ];
+        const STAGES_TEXT_ONLY = STAGES_WITH_IMAGE.filter(s => s.key !== "vision");
+
+        /* ── Helper: file → base64 ────────────────────────────────────── */
+        function fileToBase64(file) {
+            return new Promise((res, rej) => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const [, b64] = e.target.result.split(",");
+                    res({ b64, mime: file.type });
+                };
+                reader.onerror = rej;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        /* ════════════════════════════════════════════════════════════════
+           Components
+           ════════════════════════════════════════════════════════════════ */
+
+        function UrgencyBadge({ level }) {
+            const labels = { high: "High Urgency", medium: "Moderate", low: "Low Risk" };
+            return (
+                <span className={`urgency-badge badge-${level}`}>
+                    <span className="badge-dot" />
+                    {labels[level] || level}
+                </span>
+            );
+        }
+
+        function ConflictCallout({ conflict }) {
+            if (!conflict?.conflict_detected) return null;
+            const notes = {
+                severity_mismatch: "Significant mismatch — image shows high severity. Visual evidence weighted higher.",
+                minor_discrepancy: "Minor discrepancy — image suggests slightly higher severity than self-report.",
+                underreporting_possible: "Possible underreporting — visual signs exceed what patient described.",
+            };
+            return (
+                <div className="conflict-callout">
+                    <div className="conflict-title">⚠ Clinical Mismatch Detected</div>
+                    <div className="conflict-grid">
+                        <div className="conflict-cell">
+                            <div className="conflict-cell-label">Self-reported severity</div>
+                            <div className="conflict-cell-value">{conflict.text_severity}</div>
+                        </div>
+                        <div className="conflict-cell">
+                            <div className="conflict-cell-label">Visual severity</div>
+                            <div className="conflict-cell-value">{conflict.vision_severity}</div>
+                        </div>
+                    </div>
+                    <div className="conflict-note">{notes[conflict.conflict_type] || "Visual evidence has been weighted higher."}</div>
+                </div>
+            );
+        }
+
+        function Pipeline({ stage, hasImage }) {
+            const stages = hasImage ? STAGES_WITH_IMAGE : STAGES_TEXT_ONLY;
+            const order = stages.map(s => s.key);
+            const cur = order.indexOf(stage);
+            return (
+                <div className="pipeline">
+                    {stages.map((s, i) => {
+                        const idx = order.indexOf(s.key);
+                        const state = idx < cur ? "done" : idx === cur ? "active" : "";
+                        return (
+                            <div key={s.key} className={`pipe-item ${state}`}>
+                                <div className="pipe-node">
+                                    {state === "done" ? "✓" : state === "active" ? "◉" : i + 1}
+                                </div>
+                                <div className="pipe-text">
+                                    <div className="pipe-label">{s.label}</div>
+                                    <div className="pipe-sub">{s.sub}</div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        }
+
+        function Results({ data, onReset }) {
+            const { fusion, diagnosis } = data;
+            const hasImage = data.has_image;
+
+            return (
+                <div>
+                    {/* Banner */}
+                    <div className="results-banner">
+                        <div>
+                            <div className="results-title">
+                                Analysis Complete
+                                {data._demo && <span className="demo-flag">⚡ Demo</span>}
+                            </div>
+                            <div className="results-meta">
+                                {hasImage ? "Image + text" : "Text-only"} · {data.provider === "openai" ? "GPT-4o" : "Claude"} · {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </div>
+                        </div>
+                        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                            <UrgencyBadge level={fusion.urgency} />
+                            <button className="btn-back" onClick={onReset}>← New scan</button>
+                        </div>
+                    </div>
+
+                    {/* Conflict */}
+                    <ConflictCallout conflict={fusion.conflict} />
+
+                    {/* Scores — vision_score, text_score, total_risk_score from FusionResult */}
+                    <div className="score-row">
+                        {[
+                            ["Vision", fusion.vision_score],
+                            ["Text", fusion.text_score],
+                            ["Total Risk", fusion.total_risk_score],
+                        ].map(([l, v]) => (
+                            <div key={l} className="score-cell">
+                                <div className="score-num">{v}</div>
+                                <div className="score-lbl">{l} Score</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Risk signals — from FusionResult.risk_signals */}
+                    {fusion.risk_signals?.length > 0 && (
+                        <div className="section">
+                            <div className="section-title">Risk Signals</div>
+                            <div className="signals-list">
+                                {fusion.risk_signals.map((s, i) => (
+                                    <div key={i} className="signal-row">
+                                        <span className="signal-dot" />
+                                        {s}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Conditions — possible_conditions + confidence_levels from DiagnosisResult */}
+                    <div className="section">
+                        <div className="section-title">Possible Conditions</div>
+                        <div className="condition-list">
+                            {(diagnosis.possible_conditions || []).map((c, i) => (
+                                <div key={i} className="condition-row">
+                                    <span className="cond-rank">#{i + 1}</span>
+                                    <span className="cond-name">{c}</span>
+                                    {/* confidence_levels normalized to "high"|"medium"|"low" by Isaac's normalize_confidence */}
+                                    <span className={`conf-pill conf-${diagnosis.confidence_levels?.[i] || "medium"}`}>
+                                        {diagnosis.confidence_levels?.[i] || "medium"}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Clinical reasoning — clinical_reasoning[] from DiagnosisResult */}
+                    {diagnosis.clinical_reasoning?.length > 0 && (
+                        <div className="section">
+                            <div className="section-title">Clinical Reasoning</div>
+                            <div className="reasoning-list">
+                                {diagnosis.clinical_reasoning.map((r, i) => (
+                                    <div key={i} className="reasoning-row">
+                                        <span className="reasoning-dash">—</span>
+                                        {r}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Red flags — red_flags[] from DiagnosisResult + red_flags.py detection */}
+                    {diagnosis.red_flags?.length > 0 && (
+                        <div className="section">
+                            <div className="section-title">⚑ Red Flags</div>
+                            <div className="flag-wrap">
+                                {diagnosis.red_flags.map((f, i) => (
+                                    <span key={i} className="flag-tag">{f}</span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Recommendation */}
+                    {diagnosis.recommendation && (
+                        <div className="rec-box" style={{ marginBottom: 16 }}>
+                            <span className="rec-arrow">→</span>
+                            <span className="rec-text">{diagnosis.recommendation}</span>
+                        </div>
+                    )}
+
+                    {/* Disclaimer — STANDARD_DISCLAIMER from schemas.py */}
+                    <div className="disclaimer">⚕ {diagnosis.disclaimer}</div>
+                </div>
+            );
+        }
+
+        /* ════════════════════════════════════════════════════════════════
+           Main App
+           ════════════════════════════════════════════════════════════════ */
+        function App() {
+            const [form, setForm] = useState({
+                symptom_text: "", body_location: "",
+                duration_days: 1, severity: 5,
+                age: "", known_conditions: "",
+            });
+            const [image, setImage] = useState(null);   // { file, preview }
+            const [drag, setDrag] = useState(false);
+            const [apiKey, setApiKey] = useState("");
+            const [provider, setProvider] = useState("anthropic");
+            const [backendUrl, setBackendUrl] = useState("http://localhost:8000");
+            const [useMock, setUseMock] = useState(true);
+
+            const [phase, setPhase] = useState(null);  // null | stage-key | "results" | "error"
+            const [result, setResult] = useState(null);
+            const [error, setError] = useState(null);
+
+            const fileInputRef = useRef();
+
+            const setField = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+            const loadImage = useCallback((file) => {
+                if (!file || !file.type.startsWith("image/")) return;
+                setImage({ file, preview: URL.createObjectURL(file) });
+            }, []);
+
+            const loadDemo = (demo) => {
+                setForm(f => ({
+                    ...f,
+                    symptom_text: demo.symptom_text,
+                    body_location: demo.body_location,
+                    duration_days: demo.duration_days,
+                    severity: demo.severity,
+                }));
+                setError(null);
+            };
+
+            const charCount = form.symptom_text.length;
+            const canSubmit = charCount >= 10 && form.body_location.trim().length > 0;
+
+            async function runScan() {
+                if (!canSubmit) return;
+                setError(null); setResult(null);
+
+                const hasImage = !!image;
+                const stageOrder = (hasImage ? STAGES_WITH_IMAGE : STAGES_TEXT_ONLY).map(s => s.key);
+
+                if (useMock) {
+                    // Animate each stage then show mock result
+                    for (let i = 0; i < stageOrder.length; i++) {
+                        setPhase(stageOrder[i]);
+                        await new Promise(r => setTimeout(r, 650));
+                    }
+                    await new Promise(r => setTimeout(r, 300));
+                    const key = form.severity >= 7 ? "high" : form.severity >= 5 ? "medium" : "low";
+                    setResult({ ...MOCK[key], has_image: hasImage, _demo: true });
+                    setPhase("results");
+                    return;
+                }
+
+                // ── Live mode ──────────────────────────────────────────────
+                if (!apiKey) {
+                    setError("Enter your API key in the sidebar.");
+                    setPhase("error");
+                    return;
+                }
+
+                try {
+                    setPhase(stageOrder[0]);
+                    let imageB64 = null, imageMime = null;
+
+                    if (hasImage) {
+                        const enc = await fileToBase64(image.file);
+                        imageB64 = enc.b64; imageMime = enc.mime;
+                        setPhase("symptom");
+                    }
+
+                    // Animate remaining stages while the API call runs
+                    let stageIdx = hasImage ? 1 : 0;
+                    const ticker = setInterval(() => {
+                        stageIdx = Math.min(stageIdx + 1, stageOrder.length - 1);
+                        setPhase(stageOrder[stageIdx]);
+                    }, 1800);
+
+                    API.url = backendUrl;
+                    const data = await API.analyze({ formData: form, imageB64, imageMime, apiKey, provider });
+                    clearInterval(ticker);
+
+                    setResult({ ...data, has_image: hasImage });
+                    setPhase("results");
+                } catch (e) {
+                    setPhase("error");
+                    setError(e.message || "Request failed. Is Isaac's backend running?");
+                }
+            }
+
+            function reset() {
+                setPhase(null); setResult(null); setError(null);
+            }
+
+            const loading = phase && phase !== "results" && phase !== "error";
+
+            return (
+                <div className="app">
+
+                    {/* ── Sidebar ── */}
+                    <nav className="sidebar">
+                        <div className="wordmark">
+                            <div className="wordmark-icon">
+                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                    <circle cx="9" cy="9" r="7" stroke="white" strokeWidth="1.5" />
+                                    <path d="M9 5v4l3 2" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                                </svg>
+                            </div>
+                            <div className="wordmark-text">
+                                SymptomScan
+                                <small>AI Triage · v1.0</small>
+                            </div>
+                        </div>
+
+                        {/* Demo scenarios */}
+                        <div>
+                            <div className="sidebar-label">Demo scenarios</div>
+                            <div className="scenario-list">
+                                {DEMOS.map(d => (
+                                    <button key={d.label} className="scenario-btn" onClick={() => loadDemo(d)}>
+                                        <span className="scenario-icon">{d.icon}</span>
+                                        <span className="scenario-name">{d.label}</span>
+                                        <span className={`urgency-chip chip-${d.urgency}`}>
+                                            {d.urgency.toUpperCase()}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Config */}
+                        <div className="config-section">
+                            <div className="sidebar-label">Connection</div>
+
+                            <div
+                                className={`mock-row ${!useMock ? "live" : ""}`}
+                                onClick={() => setUseMock(m => !m)}
+                            >
+                                <span>{useMock ? "Demo mode" : "Live mode — connected"}</span>
+                                <div className="pill-switch" />
+                            </div>
+
+                            {!useMock && (
+                                <>
+                                    {/* AI Provider selector */}
+                                    <div className="config-field">
+                                        <label>AI Provider</label>
+                                        <div style={{ display: "flex", gap: 6 }}>
+                                            {[["anthropic", "Claude"], ["openai", "GPT-4o"]].map(([val, lbl]) => (
+                                                <button
+                                                    key={val}
+                                                    onClick={() => setProvider(val)}
+                                                    style={{
+                                                        flex: 1, padding: "7px 0",
+                                                        background: provider === val ? "var(--ink)" : "var(--paper-2)",
+                                                        color: provider === val ? "white" : "var(--ink-3)",
+                                                        border: `1px solid ${provider === val ? "var(--ink)" : "var(--line)"}`,
+                                                        borderRadius: 7, cursor: "pointer",
+                                                        fontFamily: "Outfit, sans-serif",
+                                                        fontSize: 12, fontWeight: 600,
+                                                        transition: "all .15s",
+                                                    }}
+                                                >{lbl}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="config-field">
+                                        <label>{provider === "openai" ? "OpenAI API Key" : "Anthropic API Key"}</label>
+                                        <input
+                                            type="password"
+                                            value={apiKey}
+                                            onChange={e => setApiKey(e.target.value)}
+                                            placeholder={provider === "openai" ? "sk-..." : "sk-ant-..."}
+                                        />
+                                    </div>
+                                    <div className="config-field">
+                                        <label>Backend URL</label>
+                                        <input
+                                            type="text"
+                                            value={backendUrl}
+                                            onChange={e => setBackendUrl(e.target.value)}
+                                            placeholder="http://localhost:8000"
+                                        />
+                                    </div>
+                                    <div style={{ fontSize: 11, color: "var(--ink-3)", lineHeight: 1.5 }}>
+                                        Endpoint: <code style={{ fontSize: 10, background: "var(--paper-2)", padding: "1px 4px", borderRadius: 4 }}>POST /analyze</code>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </nav>
+
+                    {/* ── Main ── */}
+                    <main className="main">
+
+                        {/* Results view */}
+                        {phase === "results" && result ? (
+                            <div className="card">
+                                <Results data={result} onReset={reset} />
+                            </div>
+
+                            /* Pipeline / loading view */
+                        ) : loading ? (
+                            <div className="card">
+                                <div className="card-head">
+                                    <div className="card-icon-wrap">⚙</div>
+                                    <div>
+                                        <div className="card-title">Running Analysis</div>
+                                        <div className="card-desc">Multimodal AI pipeline</div>
+                                    </div>
+                                </div>
+                                <Pipeline stage={phase} hasImage={!!image} />
+                            </div>
+
+                            /* Input form */
+                        ) : (
+                            <>
+                                <h1 className="page-heading">
+                                    Describe your <em>symptoms</em>
+                                </h1>
+                                <p className="page-sub">
+                                    Text only, or combine with an image for full multimodal analysis.
+                                    {useMock && <span className="demo-flag">⚡ Demo mode</span>}
+                                </p>
+
+                                {/* Symptom form */}
+                                <div className="card">
+                                    <div className="card-head">
+                                        <div className="card-icon-wrap">📋</div>
+                                        <div>
+                                            <div className="card-title">Symptom Description</div>
+                                            <div className="card-desc">Be as specific as possible — location, duration, how it feels</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="form-grid">
+                                        <div className="fld span-2">
+                                            <label>What are you experiencing? *</label>
+                                            <textarea
+                                                value={form.symptom_text}
+                                                onChange={e => setField("symptom_text", e.target.value)}
+                                                placeholder="Describe the symptom in detail — what it looks like, feels like, when it started, and any changes..."
+                                            />
+                                            <div className={`fld-hint ${charCount > 0 && charCount < 10 ? "warn" : ""}`}>
+                                                {charCount < 10
+                                                    ? `${10 - charCount} more character${10 - charCount !== 1 ? "s" : ""} needed`
+                                                    : `${charCount} characters`}
+                                            </div>
+                                        </div>
+
+                                        <div className="fld">
+                                            <label>Body location *</label>
+                                            <input
+                                                type="text"
+                                                value={form.body_location}
+                                                onChange={e => setField("body_location", e.target.value)}
+                                                placeholder="e.g. left forearm, right eye"
+                                            />
+                                        </div>
+
+                                        <div className="fld">
+                                            <label>Duration (days)</label>
+                                            <input
+                                                type="number" min="0"
+                                                value={form.duration_days}
+                                                onChange={e => setField("duration_days", e.target.value)}
+                                            />
+                                        </div>
+
+                                        <div className="fld span-2">
+                                            <label>Pain / Severity — {form.severity} / 10</label>
+                                            <div className="slider-track">
+                                                <span className="slider-ends">Mild</span>
+                                                <input
+                                                    type="range" min="1" max="10"
+                                                    value={form.severity}
+                                                    onChange={e => setField("severity", e.target.value)}
+                                                />
+                                                <span className="slider-ends" style={{ textAlign: "right" }}>Severe</span>
+                                                <span className="slider-val">{form.severity}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="fld">
+                                            <label>Age <span style={{ fontWeight: 300 }}>(optional)</span></label>
+                                            <input
+                                                type="number" min="0"
+                                                value={form.age}
+                                                onChange={e => setField("age", e.target.value)}
+                                                placeholder="—"
+                                            />
+                                        </div>
+
+                                        <div className="fld">
+                                            <label>Known conditions <span style={{ fontWeight: 300 }}>(optional)</span></label>
+                                            <input
+                                                type="text"
+                                                value={form.known_conditions}
+                                                onChange={e => setField("known_conditions", e.target.value)}
+                                                placeholder="e.g. diabetes, asthma"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Image upload */}
+                                <div className="card">
+                                    <div className="card-head">
+                                        <div className="card-icon-wrap">📷</div>
+                                        <div>
+                                            <div className="card-title">Image Upload</div>
+                                            <div className="card-desc">Optional — enables the visual analysis branch</div>
+                                        </div>
+                                    </div>
+
+                                    {image ? (
+                                        <div className="preview-wrap">
+                                            <img src={image.preview} alt="Uploaded symptom" />
+                                            <div className="preview-overlay">
+                                                <button className="remove-btn" onClick={() => setImage(null)}>
+                                                    ✕ Remove
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div
+                                                className={`dropzone ${drag ? "over" : ""}`}
+                                                onDragOver={e => { e.preventDefault(); setDrag(true); }}
+                                                onDragLeave={() => setDrag(false)}
+                                                onDrop={e => { e.preventDefault(); setDrag(false); loadImage(e.dataTransfer.files[0]); }}
+                                                onClick={() => fileInputRef.current?.click()}
+                                            >
+                                                <input
+                                                    ref={fileInputRef}
+                                                    type="file"
+                                                    accept="image/jpeg,image/png,image/webp"
+                                                    style={{ display: "none" }}
+                                                    onChange={e => loadImage(e.target.files[0])}
+                                                />
+                                                <div className="dz-icon">🩺</div>
+                                                <div className="dz-main"><strong>Click to upload</strong> or drag and drop</div>
+                                                <div className="dz-sub">JPG, PNG, WEBP · Max 10 MB</div>
+                                            </div>
+                                            <div>
+                                                <span className="text-only-note">
+                                                    ✦ Text-only mode works fine — image is optional
+                                                </span>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+
+                                {/* Error */}
+                                {error && (
+                                    <div className="error-box">
+                                        <span>⚠</span>
+                                        <span>{error}</span>
+                                    </div>
+                                )}
+
+                                {/* Actions */}
+                                <div className="action-row">
+                                    <button className="btn-primary" onClick={runScan} disabled={!canSubmit}>
+                                        ⊕ &nbsp; Run SymptomScan Analysis
+                                    </button>
+                                    <button
+                                        className="btn-ghost"
+                                        onClick={() => {
+                                            setForm({ symptom_text: "", body_location: "", duration_days: 1, severity: 5, age: "", known_conditions: "" });
+                                            setImage(null);
+                                            setError(null);
+                                        }}
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </main>
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+</body>
+
+</html>
