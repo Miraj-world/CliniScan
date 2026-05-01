@@ -80,9 +80,11 @@ button:disabled {
 }
 
 .topbar {
-  border-bottom: 1px solid rgba(99, 102, 241, 0.18);
-  background: #0f1117;
+  border-bottom: 1px solid rgba(203, 213, 225, 0.78);
+  background:
+    linear-gradient(135deg, #ffffff 0%, #f8fbff 48%, #eef7ff 100%);
   backdrop-filter: blur(18px);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
   position: sticky;
   top: 0;
   z-index: 30;
@@ -94,13 +96,15 @@ button:disabled {
   padding: 12px 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 20px;
+  position: relative;
 }
 
 .brand-lockup {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 16px;
   min-width: 0;
 }
@@ -111,9 +115,9 @@ button:disabled {
   height: 78px;
   object-fit: contain;
   border-radius: var(--radius);
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.72);
   padding: 5px 10px;
-  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.1);
 }
 
 .brand-copy {
@@ -133,32 +137,36 @@ button:disabled {
 .topbar h1 {
   font-size: 1.2rem;
   letter-spacing: 0;
-  color: #ffffff;
+  color: var(--ink);
 }
 
 .topbar p {
-  color: #a8b3c7;
+  color: var(--muted);
   font-size: 0.88rem;
 }
 
 .api-status {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
   display: inline-grid;
   grid-template-columns: auto auto;
   align-items: center;
   gap: 2px 8px;
   padding: 8px 10px;
-  border: 1px solid rgba(148, 163, 184, 0.24);
+  border: 1px solid rgba(203, 213, 225, 0.9);
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.06);
-  color: #e5edf7;
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.22);
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--ink);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
   font-size: 0.86rem;
   white-space: nowrap;
 }
 
 .api-status small {
   grid-column: 2;
-  color: #91a0b8;
+  color: var(--subtle);
   font-size: 0.72rem;
 }
 
@@ -1589,7 +1597,7 @@ input[type="range"] {
   }
 
   .topbar-inner {
-    align-items: flex-start;
+    align-items: center;
     flex-direction: column;
   }
 
@@ -1599,6 +1607,8 @@ input[type="range"] {
   }
 
   .api-status {
+    position: static;
+    transform: none;
     width: 100%;
   }
 
