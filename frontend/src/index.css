@@ -489,7 +489,7 @@ input[type="range"] {
 .severity-slider-wrap {
   --severity-progress: 44%;
   position: relative;
-  padding-top: 34px;
+  padding: 14px 14px 0;
 }
 
 .severity-slider {
@@ -560,38 +560,10 @@ input[type="range"] {
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.3);
 }
 
-.severity-value-pill {
-  position: absolute;
-  top: 0;
-  left: var(--severity-progress);
-  transform: translateX(-50%);
-  min-width: 42px;
-  padding: 5px 11px;
-  border-radius: 999px;
-  background: #0f1117;
-  color: #ffffff;
-  text-align: center;
-  font-size: 0.84rem;
-  font-weight: 900;
-  box-shadow: 0 12px 24px rgba(15, 17, 23, 0.22);
-  transition: left 0.22s ease;
-  pointer-events: none;
-}
-
-.severity-value-pill::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: -5px;
-  width: 10px;
-  height: 10px;
-  transform: translateX(-50%) rotate(45deg);
-  background: #0f1117;
-}
-
 .range-labels {
   display: flex;
   justify-content: space-between;
+  padding: 0 14px;
 }
 
 .upload-section,

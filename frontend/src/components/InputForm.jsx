@@ -162,7 +162,6 @@ export default function InputForm({ onSubmit, error }) {
               <strong>{severityValue} / 10</strong>
             </div>
             <div className="severity-slider-wrap" style={{ "--severity-progress": severityProgress }}>
-              <span className="severity-value-pill">{severityValue}</span>
               <input
                 className="severity-slider"
                 aria-label="Severity score"
