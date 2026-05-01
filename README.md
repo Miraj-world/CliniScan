@@ -16,7 +16,7 @@ CliniScan should describe results as possible conditions, risk signals, red flag
 
 - Structured symptom intake with body location, duration, severity, age, known conditions, and medications.
 - Optional image upload for visual evidence extraction.
-- Frontend live analysis defaults to Anthropic.
+- Frontend live analysis sends requests through OpenAI using `gpt-5.5`.
 - Deterministic evidence fusion that combines text and visual signals into a risk score.
 - Conflict detection when patient-reported severity and image-based severity disagree.
 - Safety override and red flag detection for urgent symptoms.
@@ -66,11 +66,13 @@ CliniScan/
 The API keys only authenticate with each provider. The model names are selected in code:
 
 - Anthropic: `claude-sonnet-4-6`
-- OpenAI: `gpt-4o`
+- OpenAI: `gpt-5.5`
 
 Current model constants live in `backend/layers/ai_gateway.py`.
 
-The current frontend does not expose a provider selector. It sends `provider: "anthropic"` in the `/analyze` payload. The backend still supports both providers for API-level use.
+The current frontend does not expose a provider selector. It sends `provider: "openai"` in the `/analyze` payload, so normal app usage requires `OPENAI_API_KEY` in `backend/.env`.
+
+The backend still supports Anthropic for API-level use and local testing if `ANTHROPIC_API_KEY` is configured.
 
 ## API Endpoints
 
@@ -101,7 +103,7 @@ Optional fields:
 
 `demo_scenario` can be `1`, `2`, or `3`.
 
-Note: the current frontend submits live assessments with `provider: "anthropic"` and does not display provider or demo controls.
+Note: the current frontend submits live assessments with `provider: "openai"` and does not display provider or demo controls.
 
 ## Local Setup
 
@@ -109,7 +111,8 @@ Note: the current frontend submits live assessments with `provider: "anthropic"`
 
 - Python 3.10+
 - Node.js 18+
-- Anthropic and/or OpenAI API key
+- OpenAI API key for current frontend usage
+- Optional Anthropic API key for API-level testing
 
 ### 1. Backend Environment
 
@@ -123,8 +126,8 @@ cp .env.example .env
 Edit `backend/.env`:
 
 ```bash
-ANTHROPIC_API_KEY=your_anthropic_key
 OPENAI_API_KEY=your_openai_key
+ANTHROPIC_API_KEY=your_anthropic_key_optional
 ```
 
 Install backend dependencies:
@@ -146,13 +149,13 @@ Start the backend:
 
 ```bash
 cd backend
-../.venv/bin/python -m uvicorn main:app --reload --port 8000
+../.venv/bin/python -m uvicorn main:app --reload --host 127.0.0.1 --port 8001
 ```
 
 Backend URL:
 
 ```text
-http://localhost:8000
+http://127.0.0.1:8001
 ```
 
 ### 2. Frontend Environment
@@ -162,20 +165,23 @@ In a separate terminal, from the repo root:
 ```bash
 cd frontend
 npm install
-npm run dev
+VITE_API_URL=http://127.0.0.1:8001 npm run dev -- --host 127.0.0.1 --port 3002
 ```
 
 Frontend URL:
 
 ```text
-http://localhost:3000
+http://127.0.0.1:3002
 ```
 
-If the backend is running on a different port:
+Alternative default ports also work if they are free. Start the backend on `8000`, then run the frontend on its default Vite port:
 
 ```bash
-cd frontend
-VITE_API_URL=http://localhost:8001 npm run dev -- --port 3002
+cd backend
+../.venv/bin/python -m uvicorn main:app --reload --port 8000
+
+cd ../frontend
+npm run dev
 ```
 
 ## Demo Scenarios

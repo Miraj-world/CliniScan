@@ -25,7 +25,8 @@ CliniScan is not a diagnosis tool. It should always direct users to licensed med
 
 - React + Vite single-page app.
 - Three main views: symptom intake, processing progress, and results dashboard.
-- Live frontend analysis currently sends `provider: "anthropic"`.
+- Live frontend analysis currently sends `provider: "openai"`.
+- The current OpenAI model is `gpt-5.5`, configured in `backend/layers/ai_gateway.py`.
 - The current UI does not expose provider selection or demo scenario buttons.
 - The header uses a transparent CliniScan logo asset from `frontend/src/assets/CliniScanLogo.png`.
 - Styled with `frontend/src/index.css`.
