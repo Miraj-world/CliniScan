@@ -17,6 +17,7 @@ CliniScan is **not** a diagnosis tool and not a replacement for licensed care.
   - symptom structuring
   - vision extraction
   - deterministic evidence fusion
+  - pgvector RAG retrieval (similar-case grounding)
   - quality gate
   - clinical reasoning
 - Results dashboard with:
@@ -44,6 +45,7 @@ CliniScan/
     requirements.txt
     .env.example
     cache/
+    db/
     layers/
     models/
   frontend/
@@ -70,6 +72,24 @@ Set API keys in `backend/.env`:
 ```env
 OPENAI_API_KEY=your_openai_key
 ANTHROPIC_API_KEY=your_anthropic_key
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/cliniscan
+DATABASE_URL_RAW=postgresql://postgres:postgres@localhost:5432/cliniscan
+```
+
+### 1b) pgvector RAG database setup
+
+```bash
+# 1. Create the database
+createdb cliniscan
+
+# 2. Install pgvector extension (if not already)
+psql cliniscan -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
+# 3. Run seed script
+python db/seed.py
+
+# 4. Start the server normally
+uvicorn main:app --reload
 ```
 
 Run backend:

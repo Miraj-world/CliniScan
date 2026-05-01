@@ -195,14 +195,28 @@ async def analyze(req: AnalyzeRequest):
             "show_uncertain_badge": True,
         }
 
+    # Layer 3 — RAG Retrieval
+    rag_cases = []
+    if not override.get("override_triggered"):
+        try:
+            from layers.rag_retriever import retrieve_similar_cases
+            rag_cases = await retrieve_similar_cases(fusion_output, symptom_output, api_key)
+        except Exception as e:
+            print(f"[RAG] Skipped: {e}")
+            rag_cases = []
+
+    # Layer 4 — Clinical Reasoning (now RAG-grounded)
     try:
-        diagnosis = await generate_clinical_reasoning(fusion_output, quality_output, provider, api_key)
+        try:
+            diagnosis = await generate_clinical_reasoning(
+                fusion_output, quality_output, provider, api_key, rag_cases=rag_cases
+            )
+        except TypeError:
+            diagnosis = await generate_clinical_reasoning(
+                fusion_output, quality_output, provider, api_key
+            )
     except Exception:
         diagnosis = fallback_diagnosis()
-        fusion_output["risk_signals"] = list(dict.fromkeys([
-            *fusion_output.get("risk_signals", []),
-            "Clinical reasoning model response was unavailable or invalid",
-        ]))
 
     payload = {
         "pipeline_stages": {
