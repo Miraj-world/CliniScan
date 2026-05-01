@@ -111,12 +111,14 @@ export default function ResultsPanel({ data, onReset }) {
 
         <section className="card result-card assessment-card">
           <div className="result-card-header">
-            <div>
-              <span className="eyebrow">Structured summary</span>
-              <h2 className="heading-with-icon">
+            <div className="clinical-summary-heading">
+              <span className="summary-heading-icon">
                 <Stethoscope size={24} strokeWidth={2.3} aria-hidden="true" />
-                Clinical assessment
-              </h2>
+              </span>
+              <div>
+                <span className="eyebrow">Structured summary</span>
+                <h2>Clinical assessment</h2>
+              </div>
             </div>
           </div>
 

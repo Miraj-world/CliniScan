@@ -1166,6 +1166,23 @@ input[type="range"] {
   color: inherit;
 }
 
+.clinical-summary-heading {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.summary-heading-icon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius);
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
 .result-card-header p {
   max-width: 360px;
   font-size: 0.9rem;
