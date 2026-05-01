@@ -52,6 +52,18 @@ def test_missing_provider_key_returns_400(monkeypatch):
     assert "OPENAI_API_KEY" in response.json()["detail"]
 
 
+def test_transcribe_requires_openai_key(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    response = client.post(
+        "/transcribe",
+        files={"audio": ("recording.webm", b"fake audio", "audio/webm")},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "OPENAI_API_KEY not configured"
+
+
 def test_text_only_analysis_path_with_mocked_layers(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
 

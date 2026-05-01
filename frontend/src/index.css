@@ -444,6 +444,133 @@ button:disabled {
   resize: vertical;
 }
 
+.symptom-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+}
+
+.textarea-voice-wrapper {
+  position: relative;
+}
+
+.voice-mic-button {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 999px;
+  background: #1e293b;
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
+  cursor: pointer;
+  z-index: 2;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+
+.voice-mic-button:hover:not(:disabled) {
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.24);
+}
+
+.voice-mic-button:disabled {
+  cursor: default;
+}
+
+.mic-recording {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #ef4444;
+  animation: pulse-ring 1.2s ease infinite;
+}
+
+.mic-processing {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.46);
+  color: #6366f1;
+}
+
+.mic-success {
+  background: rgba(34, 197, 94, 0.16);
+  border-color: rgba(34, 197, 94, 0.5);
+  color: #16a34a;
+  animation: micSuccessFlash 0.5s ease both;
+}
+
+.mic-error {
+  border-color: rgba(239, 68, 68, 0.36);
+}
+
+.animate-spin {
+  animation: spin 0.8s linear infinite;
+}
+
+.recording-pill {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 5px 10px;
+  border: 1px solid rgba(239, 68, 68, 0.24);
+  border-radius: 999px;
+  background: rgba(254, 242, 242, 0.9);
+  color: #f87171;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.recording-pill.text-red-400 {
+  color: #f87171;
+}
+
+.recording-dot {
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #ef4444;
+  animation: recordingDotPulse 1s ease infinite;
+}
+
+.voice-helper {
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.voice-toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 50;
+  padding: 10px 16px;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  animation: slideInRight 0.3s ease;
+}
+
+.voice-toast-error {
+  background: #b91c1c;
+}
+
+.voice-toast-success {
+  background: #15803d;
+}
+
+.voice-toast-processing {
+  background: #4f46e5;
+}
+
 .field input:hover,
 .field textarea:hover,
 .field select:hover {
@@ -1596,6 +1723,50 @@ input[type="range"] {
   }
   100% {
     box-shadow: 0 0 0 0 rgba(15, 118, 110, 0);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes recordingDotPulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.88);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes micSuccessFlash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
   }
 }
 

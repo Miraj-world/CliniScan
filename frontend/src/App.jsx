@@ -205,7 +205,7 @@ export default function App() {
 
       <main className="page">
         {view === "input" && (
-          <InputForm onSubmit={runAnalysis} error={error} />
+          <InputForm onSubmit={runAnalysis} error={error} apiUrl={API_URL} />
         )}
 
         {view === "processing" && (

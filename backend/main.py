@@ -5,8 +5,9 @@ import json
 import os
 from pathlib import Path
 
+import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 
 from layers.clinical_reasoning import generate_clinical_reasoning
@@ -81,6 +82,102 @@ def _default_fusion_output(symptom_output: dict, no_image_mode: bool, override: 
         "body_region": symptom_output.get("body_region", "other"),
         "no_image_mode": no_image_mode,
     }
+
+
+@app.post("/transcribe")
+async def transcribe(audio: UploadFile = File(...)):
+    openai_key = os.getenv("OPENAI_API_KEY", "").strip()
+    anthropic_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+
+    if not openai_key:
+        raise HTTPException(status_code=400, detail="OPENAI_API_KEY not configured")
+
+    try:
+        import openai
+    except ImportError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="OpenAI Whisper client is unavailable on server",
+        ) from exc
+
+    audio_bytes = await audio.read()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Audio upload is empty")
+
+    suffix = ".wav" if (audio.filename or "").lower().endswith(".wav") else ".webm"
+    tmp_path = ""
+    try:
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp.write(audio_bytes)
+            tmp_path = tmp.name
+
+        try:
+            client = openai.OpenAI(api_key=openai_key)
+            with open(tmp_path, "rb") as f:
+                transcript_result = client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=f,
+                    response_format="text",
+                )
+            raw_transcript = str(transcript_result).strip()
+        except Exception as exc:
+            raise HTTPException(
+                status_code=502,
+                detail="Whisper transcription unavailable. Please type your symptoms manually.",
+            ) from exc
+    finally:
+        if tmp_path:
+            try:
+                os.unlink(tmp_path)
+            except FileNotFoundError:
+                pass
+
+    if not raw_transcript:
+        raise HTTPException(status_code=422, detail="No speech detected in audio")
+
+    formatting_prompt = f"""You are a clinical documentation assistant.
+A patient has verbally described their symptoms. Convert their spoken words into a clear, structured clinical note.
+
+Rules:
+- Write in third person neutral clinical style ("Patient reports...", "Symptoms include...")
+- Keep it concise — 2 to 4 sentences maximum
+- Preserve all medical detail from the original — do not add anything not mentioned
+- Remove filler words, repetition, and casual language
+- Never include a diagnosis — observations only
+- If the input is unclear or too short, return it cleaned up as-is
+
+Patient's spoken words:
+\"{raw_transcript}\"
+
+Return ONLY the clinical note. No preamble, no explanation."""
+
+    clinical_note = raw_transcript
+    if anthropic_key:
+        try:
+            async with httpx.AsyncClient(timeout=20) as client:
+                resp = await client.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "x-api-key": anthropic_key,
+                        "anthropic-version": "2023-06-01",
+                        "content-type": "application/json",
+                    },
+                    json={
+                        "model": "claude-sonnet-4-20250514",
+                        "max_tokens": 300,
+                        "messages": [{"role": "user", "content": formatting_prompt}],
+                    },
+                )
+                resp.raise_for_status()
+                content = resp.json().get("content", [])
+                if content and content[0].get("text"):
+                    clinical_note = content[0]["text"].strip()
+        except Exception as exc:
+            print(f"[Transcribe] Claude formatting failed: {exc}")
+
+    return {"raw_transcript": raw_transcript, "clinical_note": clinical_note}
 
 
 @app.post("/analyze")

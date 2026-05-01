@@ -1,10 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Calendar, Camera, FileImage, MapPin, Thermometer, User } from "lucide-react";
+import {
+  Calendar,
+  Camera,
+  CheckCircle2,
+  FileImage,
+  Loader2,
+  MapPin,
+  Mic,
+  MicOff,
+  Thermometer,
+  User,
+} from "lucide-react";
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 
-export default function InputForm({ onSubmit, error }) {
+export default function InputForm({ onSubmit, error, apiUrl }) {
   const [formData, setFormData] = useState({
     symptom_text: "",
     body_location: "",
@@ -19,7 +30,17 @@ export default function InputForm({ onSubmit, error }) {
   const [imageError, setImageError] = useState("");
   const [isDraggingImage, setIsDraggingImage] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(false);
+  const [voiceState, setVoiceState] = useState("idle");
+  const [voiceError, setVoiceError] = useState("");
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [voiceToast, setVoiceToast] = useState(null);
   const fileInputRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const mediaStreamRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const voiceResetTimeoutRef = useRef(null);
+  const toastTimeoutRef = useRef(null);
 
   useEffect(() => {
     return () => {
@@ -29,10 +50,85 @@ export default function InputForm({ onSubmit, error }) {
     };
   }, [imagePreview]);
 
+  useEffect(() => {
+    const hasVoiceSupport =
+      typeof navigator !== "undefined" &&
+      Boolean(navigator.mediaDevices?.getUserMedia) &&
+      typeof window !== "undefined" &&
+      Boolean(window.isSecureContext) &&
+      Boolean(window.MediaRecorder);
+    setVoiceSupported(hasVoiceSupport);
+
+    return () => {
+      if (voiceResetTimeoutRef.current) {
+        clearTimeout(voiceResetTimeoutRef.current);
+      }
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
+
+  useEffect(() => {
+    let interval;
+    if (voiceState === "recording") {
+      setRecordingSeconds(0);
+      interval = setInterval(() => setRecordingSeconds((seconds) => seconds + 1), 1000);
+    }
+
+    return () => clearInterval(interval);
+  }, [voiceState]);
+
+  useEffect(() => {
+    if (voiceState === "recording" && recordingSeconds >= 60) {
+      stopRecording();
+    }
+  }, [recordingSeconds, voiceState]);
+
+  useEffect(() => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+
+    if (voiceState === "processing") {
+      setVoiceToast({ type: "processing", message: "Formatting your symptoms..." });
+      return;
+    }
+
+    if (voiceState === "success") {
+      setVoiceToast({ type: "success", message: "✓ Symptoms captured and formatted" });
+      toastTimeoutRef.current = setTimeout(() => setVoiceToast(null), 1500);
+      return;
+    }
+
+    if (voiceState === "error") {
+      setVoiceToast({
+        type: "error",
+        message: voiceError || "Could not process audio. Please try again.",
+      });
+      toastTimeoutRef.current = setTimeout(() => setVoiceToast(null), 2500);
+      return;
+    }
+
+    setVoiceToast(null);
+  }, [voiceError, voiceState]);
+
   const characterCount = formData.symptom_text.trim().length;
   const remainingCharacters = Math.max(10 - characterCount, 0);
   const severityValue = Number(formData.severity_score);
   const severityProgress = `${((severityValue - 1) / 9) * 100}%`;
+  const formattedRecordingTime = `${Math.floor(recordingSeconds / 60)}:${String(recordingSeconds % 60).padStart(2, "0")}`;
+  const safeApiUrl = (apiUrl || "http://localhost:8000").replace(/\/$/, "");
+  const transcribeUrl = `${safeApiUrl}/transcribe`;
+  const isVoiceBusy = voiceState === "requesting_permission" || voiceState === "processing" || voiceState === "success";
+  const micButtonClass = [
+    "voice-mic-button",
+    voiceState === "recording" ? "mic-recording" : "",
+    voiceState === "requesting_permission" || voiceState === "processing" ? "mic-processing" : "",
+    voiceState === "success" ? "mic-success" : "",
+    voiceState === "error" ? "mic-error" : "",
+  ].filter(Boolean).join(" ");
 
   const canSubmit = useMemo(() => {
     return (
@@ -44,6 +140,170 @@ export default function InputForm({ onSubmit, error }) {
 
   function setField(name, value) {
     setFormData((previousData) => ({ ...previousData, [name]: value }));
+  }
+
+  function resetVoiceAfter(delay) {
+    if (voiceResetTimeoutRef.current) {
+      clearTimeout(voiceResetTimeoutRef.current);
+    }
+    voiceResetTimeoutRef.current = setTimeout(() => setVoiceState("idle"), delay);
+  }
+
+  function getVoiceStartErrorMessage(err) {
+    const errorName = err?.name || "";
+
+    if (errorName === "NotAllowedError" || errorName === "PermissionDeniedError") {
+      return "Microphone permission is blocked. Allow microphone access for this browser and try again.";
+    }
+    if (errorName === "NotFoundError" || errorName === "DevicesNotFoundError") {
+      return "No microphone was found. Connect a microphone or type your symptoms manually.";
+    }
+    if (errorName === "NotReadableError" || errorName === "TrackStartError") {
+      return "The microphone is unavailable. Close other apps using it or check system microphone permissions.";
+    }
+    if (errorName === "SecurityError" || !window.isSecureContext) {
+      return "Microphone recording requires a secure local browser context.";
+    }
+    if (errorName === "OverconstrainedError") {
+      return "The selected microphone does not support the requested recording settings.";
+    }
+
+    return "Could not start microphone recording. Please type your symptoms manually.";
+  }
+
+  async function startRecording() {
+    setVoiceError("");
+    setVoiceState("requesting_permission");
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorderOptions =
+        typeof window.MediaRecorder.isTypeSupported === "function" &&
+        window.MediaRecorder.isTypeSupported("audio/webm")
+          ? { mimeType: "audio/webm" }
+          : {};
+      const mediaRecorder = new window.MediaRecorder(stream, recorderOptions);
+      mediaStreamRef.current = stream;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+        mediaRecorderRef.current = null;
+        setVoiceState("processing");
+
+        if (audioChunksRef.current.length === 0) {
+          setVoiceError("No audio was captured. Please try again.");
+          setVoiceState("error");
+          resetVoiceAfter(2500);
+          return;
+        }
+
+        const blob = new Blob(audioChunksRef.current, {
+          type: recorderOptions.mimeType || mediaRecorder.mimeType || "audio/webm",
+        });
+        await submitAudio(blob);
+      };
+
+      mediaRecorder.onerror = () => {
+        stream.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+        mediaRecorderRef.current = null;
+        setVoiceError("Could not record audio. Please try again.");
+        setVoiceState("error");
+        resetVoiceAfter(2500);
+      };
+
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start();
+      setVoiceState("recording");
+    } catch (err) {
+      console.warn("[Voice] Microphone recording could not start", err);
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+      setVoiceError(getVoiceStartErrorMessage(err));
+      setVoiceState("error");
+      resetVoiceAfter(2500);
+    }
+  }
+
+  function stopRecording() {
+    const mediaRecorder = mediaRecorderRef.current;
+    if (mediaRecorder && voiceState === "recording") {
+      try {
+        if (mediaRecorder.state === "recording") {
+          setVoiceState("processing");
+          mediaRecorder.stop();
+        }
+      } catch (_err) {
+        mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+        mediaRecorderRef.current = null;
+        setVoiceError("Could not stop recording. Please try again.");
+        setVoiceState("error");
+        resetVoiceAfter(2500);
+      }
+    }
+  }
+
+  function handleMicClick() {
+    if (voiceState === "idle" || voiceState === "error") {
+      startRecording();
+    } else if (voiceState === "recording") {
+      stopRecording();
+    }
+  }
+
+  async function submitAudio(blob) {
+    try {
+      const formDataPayload = new FormData();
+      formDataPayload.append("audio", blob, "recording.webm");
+
+      const response = await fetch(transcribeUrl, {
+        method: "POST",
+        body: formDataPayload,
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        const detail = String(data.detail || data.message || "");
+        if (response.status === 400 && detail.includes("OPENAI_API_KEY")) {
+          throw new Error("Voice transcription unavailable — type your symptoms manually");
+        }
+        throw new Error(detail || "Transcription failed");
+      }
+
+      setField("symptom_text", data.clinical_note || data.raw_transcript || "");
+      setVoiceState("success");
+      resetVoiceAfter(1500);
+    } catch (err) {
+      const message =
+        err.message === "Voice transcription unavailable — type your symptoms manually"
+          ? err.message
+          : "Could not process audio. Please try again.";
+      setVoiceError(message);
+      setVoiceState("error");
+      resetVoiceAfter(2500);
+    }
+  }
+
+  function renderMicIcon() {
+    if (voiceState === "recording") {
+      return <MicOff size={18} strokeWidth={2.4} aria-hidden="true" />;
+    }
+    if (voiceState === "requesting_permission" || voiceState === "processing") {
+      return <Loader2 className="animate-spin" size={18} strokeWidth={2.4} aria-hidden="true" />;
+    }
+    if (voiceState === "success") {
+      return <CheckCircle2 size={18} strokeWidth={2.4} aria-hidden="true" />;
+    }
+    return <Mic size={18} strokeWidth={2.4} aria-hidden="true" />;
   }
 
   function selectImageFile(file) {
@@ -109,20 +369,61 @@ export default function InputForm({ onSubmit, error }) {
         ) : null}
 
         <div className="form-grid">
-          <label className="field span-2">
-            <span>Symptom description *</span>
-            <textarea
-              value={formData.symptom_text}
-              placeholder="Describe what you are experiencing, when it started, whether it is changing, and any related symptoms."
-              onChange={(event) => setField("symptom_text", event.target.value)}
-              minLength={10}
-            />
+          <div className="field span-2">
+            <label className="symptom-label" htmlFor="symptom_text">
+              <span>Symptom description *</span>
+              {voiceSupported ? (
+                <span style={{
+                  background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(167,139,250,0.2))",
+                  border: "1px solid rgba(99,102,241,0.3)",
+                  borderRadius: "999px",
+                  padding: "2px 10px",
+                  fontSize: "0.68rem",
+                  color: "#a78bfa",
+                  fontWeight: 600,
+                  marginLeft: "8px"
+                }}>
+                  ✦ Voice enabled
+                </span>
+              ) : null}
+            </label>
+            <div className="textarea-voice-wrapper">
+              <textarea
+                id="symptom_text"
+                value={formData.symptom_text}
+                placeholder="Describe what you are experiencing, when it started, whether it is changing, and any related symptoms."
+                onChange={(event) => setField("symptom_text", event.target.value)}
+                minLength={10}
+                style={voiceSupported ? { paddingBottom: "48px" } : undefined}
+              />
+              {voiceSupported ? (
+                <button
+                  type="button"
+                  className={micButtonClass}
+                  onClick={handleMicClick}
+                  disabled={isVoiceBusy}
+                  aria-label={voiceState === "recording" ? "Stop voice recording" : "Start voice recording"}
+                  title={voiceState === "recording" ? "Stop voice recording" : "Start voice recording"}
+                >
+                  {renderMicIcon()}
+                </button>
+              ) : null}
+            </div>
+            {voiceState === "recording" ? (
+              <button type="button" className="recording-pill text-red-400" onClick={stopRecording}>
+                <span className="recording-dot" aria-hidden="true" />
+                Recording — {formattedRecordingTime} — Click to stop
+              </button>
+            ) : null}
+            {voiceSupported && voiceState === "idle" ? (
+              <small className="voice-helper">🎤 Tap to describe your symptoms by voice</small>
+            ) : null}
             <small>
               {remainingCharacters > 0
                 ? `${remainingCharacters} more character${remainingCharacters === 1 ? "" : "s"} needed`
                 : `${characterCount} characters entered`}
             </small>
-          </label>
+          </div>
 
           <label className="field">
             <span className="label-with-icon">
@@ -320,6 +621,12 @@ export default function InputForm({ onSubmit, error }) {
           </p>
         </div>
       </aside>
+
+      {voiceToast ? (
+        <div className={`voice-toast voice-toast-${voiceToast.type}`} role={voiceToast.type === "error" ? "alert" : "status"}>
+          {voiceToast.message}
+        </div>
+      ) : null}
     </div>
   );
 }
