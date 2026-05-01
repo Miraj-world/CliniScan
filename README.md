@@ -52,6 +52,8 @@ CliniScan/
     db/
     layers/
     models/
+  demo/
+    demo.mp4
   frontend/
     package.json
     src/
@@ -157,6 +159,10 @@ npm run dev
 - Microphone access must be allowed by the browser and operating system. If the in-app browser blocks access, open `http://127.0.0.1:3000/` in Chrome or Safari and allow microphone permission.
 - Voice capture is optional. The textarea remains editable before and after transcription, and failed voice capture does not block normal form submission.
 - `/transcribe` requires `OPENAI_API_KEY`. If `ANTHROPIC_API_KEY` is missing, transcription still works and the raw transcript is returned as the clinical note fallback.
+
+## Demo Video
+
+The project demo video is stored at [`demo/demo.mp4`](demo/demo.mp4). The file is H.264/AAC MP4 and is kept under GitHub's 100 MB file limit.
 
 ## API
 
