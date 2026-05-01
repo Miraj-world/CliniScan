@@ -1,0 +1,3 @@
+# Root dependency entrypoint
+# Keeps local Python installs aligned with backend runtime.
+-r backend/requirements.txt

@@ -149,7 +149,21 @@ export default function App() {
         if (timerRef.current) {
           clearInterval(timerRef.current);
         }
-        setResults(response);
+        setResults({
+          ...response,
+          report_input: {
+            symptom_text: payload.symptom_text,
+            body_location: payload.body_location,
+            duration_days: payload.duration_days,
+            severity_score: payload.severity_score,
+            age: payload.age,
+            known_conditions: payload.known_conditions,
+            medications: payload.medications,
+            provider: payload.provider,
+            image_uploaded: Boolean(image_base64),
+            image_preview_url: image_base64 ? `data:${image_mime};base64,${image_base64}` : null,
+          },
+        });
         setView("results");
       }, 750);
     } catch (err) {
