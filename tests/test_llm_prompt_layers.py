@@ -8,7 +8,7 @@ from models.schemas import STANDARD_DISCLAIMER
 def test_symptom_structurer_prompt_preserves_json_schema(monkeypatch):
     captured = {}
 
-    async def fake_call_ai(messages, provider, api_key, max_tokens):
+    async def fake_call_ai(messages, provider, api_key, max_tokens, **_kwargs):
         captured["prompt"] = messages[0]["content"]
         return json.dumps(
             {
@@ -51,7 +51,7 @@ def test_symptom_structurer_prompt_preserves_json_schema(monkeypatch):
 def test_clinical_reasoning_prompt_preserves_json_schema(monkeypatch):
     captured = {}
 
-    async def fake_call_ai(messages, provider, api_key, max_tokens):
+    async def fake_call_ai(messages, provider, api_key, max_tokens, **_kwargs):
         captured["prompt"] = messages[0]["content"]
         return json.dumps(
             {
