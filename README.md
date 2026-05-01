@@ -1,6 +1,6 @@
 # CliniScan
 
-CliniScan is a layered multimodal triage workflow for symptom intake and risk assessment. It combines patient-reported symptoms, optional image input, body location, duration, severity, age, medications, known conditions, and a selected AI provider to return a structured triage summary.
+CliniScan is a layered multimodal triage workflow for symptom intake and risk assessment. It combines patient-reported symptoms, optional image input, body location, duration, severity, age, medications, and known conditions to return a structured triage summary.
 
 The product is designed for hackathon demo use as a clinical decision-support prototype. It is not a medical device and it does not diagnose users.
 
@@ -16,14 +16,13 @@ CliniScan should describe results as possible conditions, risk signals, red flag
 
 - Structured symptom intake with body location, duration, severity, age, known conditions, and medications.
 - Optional image upload for visual evidence extraction.
-- Provider selection between Anthropic and OpenAI.
+- Frontend live analysis defaults to Anthropic.
 - Deterministic evidence fusion that combines text and visual signals into a risk score.
 - Conflict detection when patient-reported severity and image-based severity disagree.
 - Safety override and red flag detection for urgent symptoms.
 - Quality gate for uncertain or limited inputs.
 - JSON-only clinical reasoning layer with safe fallback behavior.
-- Demo scenarios for presentation without live API calls.
-- Polished React/Vite frontend with intake, processing, and results dashboard views.
+- Polished React/Vite frontend with centered transparent logo header, step indicator, custom severity slider, animated upload dropzone, processing animation, and results dashboard views.
 
 ## Architecture
 
@@ -48,6 +47,7 @@ CliniScan/
     src/
       App.jsx                  App shell and API orchestration
       components/              Intake, progress, result, alert, and badge components
+      assets/                  Frontend image assets, including the transparent logo
       index.css                UI design system and responsive styling
 ```
 
@@ -69,6 +69,8 @@ The API keys only authenticate with each provider. The model names are selected 
 - OpenAI: `gpt-4o`
 
 Current model constants live in `backend/layers/ai_gateway.py`.
+
+The current frontend does not expose a provider selector. It sends `provider: "anthropic"` in the `/analyze` payload. The backend still supports both providers for API-level use.
 
 ## API Endpoints
 
@@ -98,6 +100,8 @@ Optional fields:
 `provider` must be either `anthropic` or `openai`.
 
 `demo_scenario` can be `1`, `2`, or `3`.
+
+Note: the current frontend submits live assessments with `provider: "anthropic"` and does not display provider or demo controls.
 
 ## Local Setup
 
@@ -176,13 +180,13 @@ VITE_API_URL=http://localhost:8001 npm run dev -- --port 3002
 
 ## Demo Scenarios
 
-The frontend includes three cached demo scenarios:
+The backend still includes three cached demo scenarios:
 
 - Skin Rash
 - Minor Burn
 - Eye Redness
 
-Demo scenarios call the backend with `demo_scenario` and return cached responses from `backend/cache/`. They are useful for presentations because they do not require live model calls.
+Demo scenarios call the backend with `demo_scenario` and return cached responses from `backend/cache/`. They are useful for API testing and presentation fallback because they do not require live model calls. The current frontend does not show demo scenario buttons.
 
 ## Verification
 
